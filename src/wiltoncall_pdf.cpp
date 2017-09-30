@@ -242,7 +242,7 @@ support::buffer write_text(sl::io::span<const char> data) {
     auto font = HPDF_GetFont(doc, font_name.c_str(), "UTF-8");
     HPDF_Page_SetFontAndSize(page, font, font_size);
     HPDF_Page_BeginText(page);
-    HPDF_Page_TextOut(page, x, y, text.c_str());
+    HPDF_Page_TextOut(page, static_cast<float>(x), static_cast<float>(y), text.c_str());
     HPDF_Page_EndText(page);
     return support::make_empty_buffer();
 }
@@ -335,7 +335,7 @@ support::buffer write_text_inside_rectangle(sl::io::span<const char> data) {
     auto font = HPDF_GetFont(doc, font_name.c_str(), "UTF-8");
     HPDF_Page_SetFontAndSize(page, font, font_size);
     HPDF_Page_BeginText(page);
-    HPDF_Page_TextRect(page, left, top, right, bottom, text.c_str(), halign, nullptr);
+    HPDF_Page_TextRect(page, static_cast<float>(left), static_cast<float>(top), static_cast<float>(right), static_cast<float>(bottom), text.c_str(), halign, nullptr);
     HPDF_Page_EndText(page);
     return support::make_empty_buffer();
 }
@@ -394,8 +394,8 @@ support::buffer draw_line(sl::io::span<const char> data) {
             " please add at least one page to the document first"));
     HPDF_Page_SetRGBStroke(page, color.r, color.g, color.b);
     HPDF_Page_SetLineWidth(page, lineWidth);
-    HPDF_Page_MoveTo(page, beginX, beginY);
-    HPDF_Page_LineTo(page, endX, endY);
+    HPDF_Page_MoveTo(page, static_cast<float>(beginX), static_cast<float>(beginY));
+    HPDF_Page_LineTo(page, static_cast<float>(endX), static_cast<float>(endY));
     HPDF_Page_Stroke(page);
     return support::make_empty_buffer();
 }
@@ -454,7 +454,7 @@ support::buffer draw_rectangle(sl::io::span<const char> data) {
             " please add at least one page to the document first"));
     HPDF_Page_SetRGBStroke(page, color.r, color.g, color.b);
     HPDF_Page_SetLineWidth(page, lineWidth);
-    HPDF_Page_Rectangle(page, x, y, width, height);
+    HPDF_Page_Rectangle(page, static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height));
     HPDF_Page_Stroke(page);
     return support::make_empty_buffer();
 }
