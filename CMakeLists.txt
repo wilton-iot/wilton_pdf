@@ -8,9 +8,8 @@ project ( wilton_pdf CXX )
 if ( STATICLIB_TOOLCHAIN MATCHES "windows_[^_]+_[^_]+" )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
-endif ( )
-if ( WILTON_BUILD_FLAVOUR MATCHES "wheezy" )
-    # libhpdf-dev in wheezy doesn't support unicode
+elseif ( WILTON_BUILD_FLAVOUR MATCHES "(wheezy|xenial)" )
+    # libhpdf-dev here doesn't support unicode
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
 endif ( )
 
