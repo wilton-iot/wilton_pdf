@@ -5,8 +5,14 @@ cmake_minimum_required ( VERSION 2.8.12 )
 project ( wilton_pdf CXX )
 
 # dependencies
-staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
-staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
+if ( STATICLIB_TOOLCHAIN MATCHES "windows_[^_]+_[^_]+" )
+    staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
+    staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
+endif ( )
+if ( WILTON_BUILD_FLAVOUR MATCHES "wheezy" )
+    # libhpdf-dev in wheezy doesn't support unicode
+    staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
+endif ( )
 
 set ( ${PROJECT_NAME}_DEPS
         staticlib_config
