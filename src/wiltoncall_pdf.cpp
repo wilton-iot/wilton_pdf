@@ -128,6 +128,8 @@ support::buffer add_page(sl::io::span<const char> data) {
     int64_t handle = -1;
     auto rformat = std::ref(sl::utils::empty_string());
     auto rorient = std::ref(sl::utils::empty_string());
+    int64_t width = -1;
+    int64_t height = -1;
     for (const sl::json::field& fi : json.as_object()) {
         auto& name = fi.name();
         if ("pdfDocumentHandle" == name) {
@@ -136,17 +138,29 @@ support::buffer add_page(sl::io::span<const char> data) {
             rformat = fi.as_string_nonempty_or_throw(name);
         } else if ("orientation" == name) {
             rorient = fi.as_string_nonempty_or_throw(name);
+        } else if ("width" == name) {
+            width = fi.as_int64_or_throw(name);
+        } else if ("height" == name) {
+            height = fi.as_int64_or_throw(name);
         } else {
             throw support::exception(TRACEMSG("Unknown data field: [" + name + "]"));
         }
     }
     if (-1 == handle) throw support::exception(TRACEMSG(
             "Required parameter 'pdfDocumentHandle' not specified"));
-    if (rformat.get().empty()) throw support::exception(TRACEMSG(
+    if (rformat.get().empty() && !(-1 != height && -1 != width)) throw support::exception(TRACEMSG(
             "Required parameter 'format' not specified"));
-    const std::string& format = rformat.get();
-    if (rorient.get().empty()) throw support::exception(TRACEMSG(
+    if (rorient.get().empty() && !(-1 != height && -1 != width)) throw support::exception(TRACEMSG(
             "Required parameter 'orientation' not specified"));
+    if (-1 == width && !(!rformat.get().empty() && ! rorient.get().empty())) throw support::exception(TRACEMSG(
+            "Required parameter 'width' not specified"));
+    if (-1 == height && !(!rformat.get().empty() && ! rorient.get().empty())) throw support::exception(TRACEMSG(
+            "Required parameter 'height' not specified"));
+    if ((!rformat.get().empty() || !rorient.get().empty()) && (-1 != height || -1 != width)) {
+        throw support::exception(TRACEMSG("Invalid parameters, either both 'height' and 'width'," +
+                " or both 'format' and 'orientation' must be specified"));
+    }
+    const std::string& format = rformat.get();
     const std::string& orient = rorient.get();
     // get handle
     HPDF_Doc doc = static_registry().remove(handle);
@@ -155,30 +169,37 @@ support::buffer add_page(sl::io::span<const char> data) {
     auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
         static_registry().put(doc);
     });
-    // call haru
-    HPDF_PageSizes hformat = [&format] () -> HPDF_PageSizes {
-       if ("A3" == format) {
-           return HPDF_PAGE_SIZE_A3;
-       } else if ("A4" == format) {
-           return HPDF_PAGE_SIZE_A4;
-       } else if ("A5" == format) {
-           return HPDF_PAGE_SIZE_A5;
-       } else if ("B4" == format) {
-           return HPDF_PAGE_SIZE_B4;
-       } else if ("B5" == format) {
-           return HPDF_PAGE_SIZE_B5;
-       } else throw support::exception(TRACEMSG("Unsupported PDF page format specified, format: [" + format + "]"));
-    } ();
-    HPDF_PageDirection horient = [&orient] () -> HPDF_PageDirection {
-       if ("PORTRAIT" == orient) {
-           return HPDF_PAGE_PORTRAIT;
-       } else if ("LANDSCAPE" == orient) {
-           return HPDF_PAGE_LANDSCAPE;
-       } else throw support::exception(TRACEMSG("Unsupported PDF page orientation specified, orientation: [" + orient + "]"));
-    } ();
-    HPDF_Page page = HPDF_AddPage(doc);
-    if (nullptr == page) throw support::exception(TRACEMSG("'HPDF_AddPage' error"));
-    HPDF_Page_SetSize(page, hformat, horient);
+    if (!format.empty()) {
+        // call haru
+        HPDF_PageSizes hformat = [&format] () -> HPDF_PageSizes {
+           if ("A3" == format) {
+               return HPDF_PAGE_SIZE_A3;
+           } else if ("A4" == format) {
+               return HPDF_PAGE_SIZE_A4;
+           } else if ("A5" == format) {
+               return HPDF_PAGE_SIZE_A5;
+           } else if ("B4" == format) {
+               return HPDF_PAGE_SIZE_B4;
+           } else if ("B5" == format) {
+               return HPDF_PAGE_SIZE_B5;
+           } else throw support::exception(TRACEMSG("Unsupported PDF page format specified, format: [" + format + "]"));
+        } ();
+        HPDF_PageDirection horient = [&orient] () -> HPDF_PageDirection {
+           if ("PORTRAIT" == orient) {
+               return HPDF_PAGE_PORTRAIT;
+           } else if ("LANDSCAPE" == orient) {
+               return HPDF_PAGE_LANDSCAPE;
+           } else throw support::exception(TRACEMSG("Unsupported PDF page orientation specified, orientation: [" + orient + "]"));
+        } ();
+        HPDF_Page page = HPDF_AddPage(doc);
+        if (nullptr == page) throw support::exception(TRACEMSG("'HPDF_AddPage' error"));
+        HPDF_Page_SetSize(page, hformat, horient);
+    } else {
+        HPDF_Page page = HPDF_AddPage(doc);
+        if (nullptr == page) throw support::exception(TRACEMSG("'HPDF_AddPage' error"));
+        HPDF_Page_SetWidth(page, static_cast<float>(width));
+        HPDF_Page_SetHeight(page, static_cast<float>(height));
+    }
     return support::make_empty_buffer();
 }
 
