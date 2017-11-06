@@ -5,7 +5,7 @@ cmake_minimum_required ( VERSION 2.8.12 )
 project ( wilton_pdf CXX )
 
 # dependencies
-if ( STATICLIB_TOOLCHAIN MATCHES "(android|windows)_.+" )
+if ( STATICLIB_TOOLCHAIN MATCHES "(android|windows|macosx)_.+" )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
 elseif ( WILTON_BUILD_FLAVOUR MATCHES "(wheezy|xenial|el7)" )
