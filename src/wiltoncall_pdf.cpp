@@ -5,6 +5,7 @@
  * Created on September 30, 2017, 2:06 PM
  */
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "hpdf.h"
@@ -25,11 +26,11 @@ namespace pdf {
 
 namespace { // anonymous
 
-support::handle_registry<_HPDF_Doc_Rec>& static_registry() {
-    static support::handle_registry<_HPDF_Doc_Rec> registry {
+std::shared_ptr<support::handle_registry<_HPDF_Doc_Rec>> shared_registry() {
+    static auto registry = std::make_shared<support::handle_registry<_HPDF_Doc_Rec>>(
         [] (HPDF_Doc doc) STATICLIB_NOEXCEPT {
             HPDF_Free(doc);
-        }};
+        });
     return registry;
 }
 
@@ -82,7 +83,8 @@ support::buffer create_document(sl::io::span<const char>) {
     HPDF_UseUTFEncodings(doc);
     HPDF_SetCompressionMode(doc, HPDF_COMP_ALL);
     HPDF_SetPageMode(doc, HPDF_PAGE_MODE_USE_OUTLINE);
-    int64_t handle = static_registry().put(doc);
+    auto reg = shared_registry();
+    int64_t handle = reg->put(doc);
     return support::make_json_buffer({
         { "pdfDocumentHandle", handle}
     });
@@ -109,11 +111,12 @@ support::buffer load_font(sl::io::span<const char> data) {
             "Required parameter 'ttfPath' not specified"));
     const std::string& path = rpath.get();
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     auto font_name = HPDF_LoadTTFontFromFile(doc, path.c_str(), HPDF_TRUE);
@@ -163,11 +166,12 @@ support::buffer add_page(sl::io::span<const char> data) {
     const std::string& format = rformat.get();
     const std::string& orient = rorient.get();
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     if (!format.empty()) {
         // call haru
@@ -248,11 +252,12 @@ support::buffer write_text(sl::io::span<const char> data) {
     const std::string& font_name = rfont_name.get();
     const std::string& text = rtext.get();
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     HPDF_Page page = HPDF_GetCurrentPage(doc);
@@ -329,11 +334,12 @@ support::buffer write_text_inside_rectangle(sl::io::span<const char> data) {
     const std::string& text = rtext.get();
     const std::string& align = ralign.get();
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     HPDF_TextAlignment halign = [&align]() -> HPDF_TextAlignment {
@@ -402,11 +408,12 @@ support::buffer draw_line(sl::io::span<const char> data) {
     if (-1 == endY) throw support::exception(TRACEMSG(
             "Required parameter 'endY' not specified"));
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     HPDF_Page page = HPDF_GetCurrentPage(doc);
@@ -462,11 +469,12 @@ support::buffer draw_rectangle(sl::io::span<const char> data) {
     if (-1 == height) throw support::exception(TRACEMSG(
             "Required parameter 'height' not specified"));
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     HPDF_Page page = HPDF_GetCurrentPage(doc);
@@ -501,11 +509,12 @@ support::buffer save_to_file(sl::io::span<const char> data) {
             "Required parameter 'path' not specified"));
     const std::string& path = rpath.get();
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
-    auto deferred = sl::support::defer([doc]() STATICLIB_NOEXCEPT {
-        static_registry().put(doc);
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
     });
     // call haru
     HPDF_SaveToFile(doc, path.c_str());
@@ -527,7 +536,8 @@ support::buffer destroy_document(sl::io::span<const char> data) {
     if (-1 == handle) throw support::exception(TRACEMSG(
             "Required parameter 'pdfDocumentHandle' not specified"));
     // get handle
-    HPDF_Doc doc = static_registry().remove(handle);
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
     // call haru
