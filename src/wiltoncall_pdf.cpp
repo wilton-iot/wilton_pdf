@@ -488,6 +488,82 @@ support::buffer draw_rectangle(sl::io::span<const char> data) {
     return support::make_empty_buffer();
 }
 
+support::buffer draw_image(sl::io::span<const char> data) {
+    // json parse
+    auto json = sl::json::load(data);
+    int64_t handle = -1;
+    int32_t x = -1;
+    int32_t y = -1;
+    int32_t width = -1;
+    int32_t height = -1;
+    auto rimage_hex = std::ref(sl::utils::empty_string());
+    auto rformat = std::ref(sl::utils::empty_string());
+    for (const sl::json::field& fi : json.as_object()) {
+        auto& name = fi.name();
+        if ("pdfDocumentHandle" == name) {
+            handle = fi.as_int64_or_throw(name);
+        } else if ("x" == name) {
+            x = fi.as_uint16_or_throw(name);
+        } else if ("y" == name) {
+            y = fi.as_uint16_or_throw(name);
+        } else if ("width" == name) {
+            width = fi.as_uint16_or_throw(name);
+        } else if ("height" == name) {
+            height = fi.as_uint16_or_throw(name);
+        } else if ("imageHex" == name) {
+            rimage_hex = fi.as_string_nonempty_or_throw(name);
+        } else if ("imageFormat" == name) {
+            rformat = fi.as_string_nonempty_or_throw(name);
+        } else {
+            throw support::exception(TRACEMSG("Unknown data field: [" + name + "]"));
+        }
+    }
+    if (-1 == handle) throw support::exception(TRACEMSG(
+            "Required parameter 'pdfDocumentHandle' not specified"));
+    if (-1 == x) throw support::exception(TRACEMSG(
+            "Required parameter 'x' not specified"));
+    if (-1 == y) throw support::exception(TRACEMSG(
+            "Required parameter 'y' not specified"));
+    if (-1 == width) throw support::exception(TRACEMSG(
+            "Required parameter 'width' not specified"));
+    if (-1 == height) throw support::exception(TRACEMSG(
+            "Required parameter 'height' not specified"));
+    if (rimage_hex.get().empty()) throw support::exception(TRACEMSG(
+            "Required parameter 'imageHex' not specified"));
+    if (rformat.get().empty()) throw support::exception(TRACEMSG(
+            "Required parameter 'imageFormat' not specified"));
+    const std::string& image_hex = rimage_hex.get();
+    const std::string& format = rformat.get();
+    // get handle
+    auto reg = shared_registry();
+    HPDF_Doc doc = reg->remove(handle);
+    if (nullptr == doc) throw support::exception(TRACEMSG(
+            "Invalid 'pdfDocumentHandle' parameter specified"));
+    auto deferred = sl::support::defer([reg, doc]() STATICLIB_NOEXCEPT {
+        reg->put(doc);
+    });
+    // call haru
+    HPDF_Page page = HPDF_GetCurrentPage(doc);
+    if (nullptr == page) throw support::exception(TRACEMSG(
+            "PDF generation error, cannot access current page," +
+            " please add at least one page to the document first"));
+
+    // convert hex to binary
+    auto src_hex = sl::io::array_source(image_hex.data(), image_hex.length());
+    auto sink_bin = sl::io::make_array_sink();
+    sl::io::copy_from_hex(src_hex, sink_bin);
+
+    // load PNG, more formats may be added later
+    if ("PNG" != format) throw support::exception(TRACEMSG(
+            "Required parameter 'imageFormat' not specified"));
+    // note: currently there is no image reuse - it is loaded every time
+    auto buf_ptr = const_cast<const unsigned char*>(reinterpret_cast<unsigned char*>(sink_bin.data()));
+    auto image = HPDF_LoadPngImageFromMem(doc, buf_ptr, sink_bin.size());
+    HPDF_Page_DrawImage(page, image, x, y, width, height);
+
+    return support::make_empty_buffer();
+}
+
 support::buffer save_to_file(sl::io::span<const char> data) {
     // json parse
     auto json = sl::json::load(data);
@@ -597,6 +673,7 @@ extern "C" char* wilton_module_init() {
         wilton::support::register_wiltoncall("pdf_write_text_inside_rectangle", wilton::pdf::write_text_inside_rectangle);
         wilton::support::register_wiltoncall("pdf_draw_line", wilton::pdf::draw_line);
         wilton::support::register_wiltoncall("pdf_draw_rectangle", wilton::pdf::draw_rectangle);
+        wilton::support::register_wiltoncall("pdf_draw_image", wilton::pdf::draw_image);
         wilton::support::register_wiltoncall("pdf_save_to_file", wilton::pdf::save_to_file);
         wilton::support::register_wiltoncall("pdf_destroy_document", wilton::pdf::destroy_document);
         return nullptr;
