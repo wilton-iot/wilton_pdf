@@ -21,6 +21,7 @@ set ( ${PROJECT_NAME}_DEPS
         staticlib_utils
         staticlib_json
         staticlib_tinydir
+        libpng
         hpdf )
 staticlib_pkg_check_modules ( ${PROJECT_NAME}_DEPS_PC REQUIRED ${PROJECT_NAME}_DEPS )
 
