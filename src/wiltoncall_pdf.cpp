@@ -105,6 +105,7 @@ void png_error_cb(png_structp png_ptr, const char* msg) {
     std::string& errmsg = err_ctx.second;
     errmsg.append(TRACEMSG(msg));
     std::jmp_buf& jmpbuf = err_ctx.first;
+    // returning non-zero
     std::longjmp(jmpbuf, 42);
 }
 
@@ -112,8 +113,8 @@ void check_png_valid(sl::io::array_source src) {
     // long jump setup for no-return err_cb
     auto read_ctx = std::pair<sl::support::observer_ptr<sl::io::array_source>, std::string>();
     read_ctx.first.reset(std::addressof(src));
-    auto err_ctx = std::pair<std::jmp_buf, std::string>();
-    std::jmp_buf& jmpbuf = err_ctx.first;
+    auto err_ctx = sl::support::make_unique<std::pair<std::jmp_buf, std::string>>();
+    std::jmp_buf& jmpbuf = err_ctx->first;
     
     // check signature
     std::array<char, 8> sigbuf;
@@ -124,7 +125,7 @@ void check_png_valid(sl::io::array_source src) {
             "Invalid PNG signature"));
 
     // create structs
-    auto png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, std::addressof(err_ctx), png_error_cb, nullptr);
+    auto png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, err_ctx.get(), png_error_cb, nullptr);
     if (nullptr == png_ptr) throw support::exception(TRACEMSG(
             "Error creating PNG read struct"));
     auto info_ptr = png_create_info_struct(png_ptr);
@@ -162,7 +163,7 @@ void check_png_valid(sl::io::array_source src) {
         // read end info
         png_read_end(png_ptr, end_info_ptr);
     } else {
-        throw support::exception(TRACEMSG("PNG read error, message: [" + err_ctx.second + "]"));
+        throw support::exception(TRACEMSG("PNG read error, message: [" + err_ctx->second + "]"));
     }
 }
 
@@ -174,7 +175,7 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
 
     // check that input is PNG, more formats may be added later
     if ("PNG" != format) throw support::exception(TRACEMSG(
-            "Required parameter 'imageFormat' not specified"));
+            "Invalid 'imageFormat' specified: [" + format + "]"));
     auto src = sl::io::array_source(sink_bin.data(),sink_bin.size());
     // explicit check is required because haru may crash on invalid PNG input
     check_png_valid(src);
