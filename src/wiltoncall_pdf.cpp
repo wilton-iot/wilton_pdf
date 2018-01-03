@@ -685,7 +685,8 @@ support::buffer draw_image(sl::io::span<const char> data) {
             " please add at least one page to the document first"));
 
     HPDF_Image image = load_image_from_hex(doc, image_hex, format);
-    HPDF_Page_DrawImage(page, image, x, y, width, height);
+    HPDF_Page_DrawImage(page, image, static_cast<HPDF_REAL>(x), static_cast<HPDF_REAL>(y),
+            static_cast<HPDF_REAL>(width), static_cast<HPDF_REAL>(height));
 
     return support::make_empty_buffer();
 }
