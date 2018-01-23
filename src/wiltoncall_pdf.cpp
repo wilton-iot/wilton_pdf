@@ -181,7 +181,7 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
     check_png_valid(src);
     // note: currently there is no image reuse - it is loaded every time
     auto buf_ptr = const_cast<const unsigned char*>(reinterpret_cast<unsigned char*>(sink_bin.data()));
-    return HPDF_LoadPngImageFromMem(doc, buf_ptr, sink_bin.size());
+    return HPDF_LoadPngImageFromMem(doc, buf_ptr, static_cast<HPDF_UINT>(sink_bin.size()));
 }
 
 class rgb_color {
