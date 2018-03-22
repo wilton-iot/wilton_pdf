@@ -48,6 +48,7 @@ namespace pdf {
 
 namespace { // anonymous
 
+// initialized from wilton_module_init
 std::shared_ptr<support::handle_registry<_HPDF_Doc_Rec>> shared_registry() {
     static auto registry = std::make_shared<support::handle_registry<_HPDF_Doc_Rec>>(
         [] (HPDF_Doc doc) STATICLIB_NOEXCEPT {
@@ -809,6 +810,7 @@ support::buffer test(sl::io::span<const char> data) {
 
 extern "C" char* wilton_module_init() {
     try {
+        wilton::pdf::shared_registry();
         wilton::support::register_wiltoncall("pdf_create_document", wilton::pdf::create_document);
         wilton::support::register_wiltoncall("pdf_load_font", wilton::pdf::load_font);
         wilton::support::register_wiltoncall("pdf_add_page", wilton::pdf::add_page);
