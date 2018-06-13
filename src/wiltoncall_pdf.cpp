@@ -188,7 +188,10 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
     // convert hex to binary
     auto src_hex = sl::io::array_source(image_hex.data(), image_hex.length());
     auto sink_bin = sl::io::make_array_sink();
-    sl::io::copy_from_hex(src_hex, sink_bin);
+    {
+        auto src = sl::io::make_hex_source(src_hex);
+        sl::io::copy_all(src, sink_bin);
+    }
 
     // check that input is PNG, more formats may be added later
     if ("PNG" != format) throw support::exception(TRACEMSG(
