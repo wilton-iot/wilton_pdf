@@ -50,8 +50,10 @@ namespace { // anonymous
 
 // initialized from wilton_module_init
 std::shared_ptr<support::unique_handle_registry<_HPDF_Doc_Rec>> doc_registry() {
-    static auto registry = std::make_shared<
-            support::unique_handle_registry<_HPDF_Doc_Rec>>(HPDF_Free);
+    static auto registry = std::make_shared<support::unique_handle_registry<_HPDF_Doc_Rec>>(
+            [](HPDF_Doc doc) STATICLIB_NOEXCEPT {
+                HPDF_Free(doc);
+            });
     return registry;
 }
 
