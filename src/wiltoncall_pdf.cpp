@@ -40,7 +40,7 @@
 
 #include "wilton/support/buffer.hpp"
 #include "wilton/support/exception.hpp"
-#include "wilton/support/handle_registry.hpp"
+#include "wilton/support/unique_handle_registry.hpp"
 #include "wilton/support/registrar.hpp"
 
 namespace wilton {
@@ -49,11 +49,9 @@ namespace pdf {
 namespace { // anonymous
 
 // initialized from wilton_module_init
-std::shared_ptr<support::handle_registry<_HPDF_Doc_Rec>> shared_registry() {
-    static auto registry = std::make_shared<support::handle_registry<_HPDF_Doc_Rec>>(
-        [] (HPDF_Doc doc) STATICLIB_NOEXCEPT {
-            HPDF_Free(doc);
-        });
+std::shared_ptr<support::unique_handle_registry<_HPDF_Doc_Rec>> doc_registry() {
+    static auto registry = std::make_shared<
+            support::unique_handle_registry<_HPDF_Doc_Rec>>(HPDF_Free);
     return registry;
 }
 
@@ -239,7 +237,7 @@ support::buffer create_document(sl::io::span<const char>) {
     HPDF_UseUTFEncodings(doc);
     HPDF_SetCompressionMode(doc, HPDF_COMP_ALL);
     HPDF_SetPageMode(doc, HPDF_PAGE_MODE_USE_OUTLINE);
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     int64_t handle = reg->put(doc);
     return support::make_json_buffer({
         { "pdfDocumentHandle", handle}
@@ -267,7 +265,7 @@ support::buffer load_font(sl::io::span<const char> data) {
             "Required parameter 'ttfPath' not specified"));
     const std::string& path = rpath.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -322,7 +320,7 @@ support::buffer add_page(sl::io::span<const char> data) {
     const std::string& format = rformat.get();
     const std::string& orient = rorient.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -408,7 +406,7 @@ support::buffer write_text(sl::io::span<const char> data) {
     const std::string& font_name = rfont_name.get();
     const std::string& text = rtext.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -490,7 +488,7 @@ support::buffer write_text_inside_rectangle(sl::io::span<const char> data) {
     const std::string& text = rtext.get();
     const std::string& align = ralign.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -564,7 +562,7 @@ support::buffer draw_line(sl::io::span<const char> data) {
     if (-1 == endY) throw support::exception(TRACEMSG(
             "Required parameter 'endY' not specified"));
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -625,7 +623,7 @@ support::buffer draw_rectangle(sl::io::span<const char> data) {
     if (-1 == height) throw support::exception(TRACEMSG(
             "Required parameter 'height' not specified"));
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -691,7 +689,7 @@ support::buffer draw_image(sl::io::span<const char> data) {
     const std::string& image_hex = rimage_hex.get();
     const std::string& format = rformat.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -732,7 +730,7 @@ support::buffer save_to_file(sl::io::span<const char> data) {
             "Required parameter 'path' not specified"));
     const std::string& path = rpath.get();
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -759,7 +757,7 @@ support::buffer destroy_document(sl::io::span<const char> data) {
     if (-1 == handle) throw support::exception(TRACEMSG(
             "Required parameter 'pdfDocumentHandle' not specified"));
     // get handle
-    auto reg = shared_registry();
+    auto reg = doc_registry();
     HPDF_Doc doc = reg->remove(handle);
     if (nullptr == doc) throw support::exception(TRACEMSG(
             "Invalid 'pdfDocumentHandle' parameter specified"));
@@ -813,7 +811,7 @@ support::buffer test(sl::io::span<const char> data) {
 
 extern "C" char* wilton_module_init() {
     try {
-        wilton::pdf::shared_registry();
+        wilton::pdf::doc_registry();
         wilton::support::register_wiltoncall("pdf_create_document", wilton::pdf::create_document);
         wilton::support::register_wiltoncall("pdf_load_font", wilton::pdf::load_font);
         wilton::support::register_wiltoncall("pdf_add_page", wilton::pdf::add_page);
