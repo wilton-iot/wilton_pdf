@@ -20,6 +20,8 @@ jobs:
       - image: wiltoniot/wheezy-amd64
         environment:
           WILTON_BUILD_FLAVOUR: wheezy
+    environment:
+      CIRCLE_REPOSITORY_URL: https://github.com/wilton-iot/wilton_pdf.git
     steps:
       - checkout
       - run:
@@ -42,6 +44,8 @@ jobs:
       - image: wiltoniot/fedora-amd64
         environment:
           WILTON_BUILD_FLAVOUR: fedora
+    environment:
+      CIRCLE_REPOSITORY_URL: https://github.com/wilton-iot/wilton_pdf.git
     steps:
       - checkout
       - run:
