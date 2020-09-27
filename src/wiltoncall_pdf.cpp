@@ -193,15 +193,21 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
         sl::io::copy_all(src, sink_bin);
     }
 
-    // check that input is PNG, more formats may be added later
-    if ("PNG" != format) throw support::exception(TRACEMSG(
+    // check that input is PNG or JPEG
+    if ("PNG" != format && "JPEG" != format) throw support::exception(TRACEMSG(
             "Invalid 'imageFormat' specified: [" + format + "]"));
     auto src = sl::io::array_source(sink_bin.data(),sink_bin.size());
-    // explicit check is required because haru may crash on invalid PNG input
-    check_png_valid(src);
+    if ("PNG" == format) {
+        // explicit check is required because haru may crash on invalid PNG input
+        check_png_valid(src);
+    }
     // note: currently there is no image reuse - it is loaded every time
     auto buf_ptr = const_cast<const unsigned char*>(reinterpret_cast<unsigned char*>(sink_bin.data()));
-    return HPDF_LoadPngImageFromMem(doc, buf_ptr, static_cast<HPDF_UINT>(sink_bin.size()));
+    if ("PNG" == format) {
+        return HPDF_LoadPngImageFromMem(doc, buf_ptr, static_cast<HPDF_UINT>(sink_bin.size()));
+    } else { // "JPEG"
+        return HPDF_LoadJpegImageFromMem(doc, buf_ptr, static_cast<HPDF_UINT>(sink_bin.size()));
+    }
 }
 
 class rgb_color {
