@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: 2
+version: 2.1
 
 jobs:
   wheezy:
@@ -20,7 +20,6 @@ jobs:
       - image: wiltoniot/wheezy-amd64
         environment:
           WILTON_BUILD_FLAVOUR: wheezy
-          CIRCLE_REPOSITORY_URL: https://github.com/wilton-iot/wilton_pdf.git
     steps:
       - checkout
       - run:
@@ -43,7 +42,6 @@ jobs:
       - image: wiltoniot/fedora-amd64
         environment:
           WILTON_BUILD_FLAVOUR: fedora
-          CIRCLE_REPOSITORY_URL: https://github.com/wilton-iot/wilton_pdf.git
     steps:
       - checkout
       - run:
@@ -62,7 +60,7 @@ jobs:
             bash ./resources/ci/circle.sh
 
 workflows:
-  version: 2
+  version: 2.1
   wheezy_and_fedora:
     jobs:
       - wheezy:
