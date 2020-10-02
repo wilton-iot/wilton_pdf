@@ -28,6 +28,7 @@
 
 #include "hpdf.h"
 #include "png.h"
+#include "jpeglib.h"
 
 // must go after png.h
 #include <csetjmp>
@@ -184,6 +185,13 @@ void check_png_valid(sl::io::array_source src) {
     }
 }
 
+void check_jpeg_valid(sl::io::array_source src) {
+    (void) src;
+    struct jpeg_decompress_struct cinfo;
+    jpeg_create_decompress(std::addressof(cinfo));
+    jpeg_destroy_decompress(std::addressof(cinfo));
+}
+
 HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const std::string& format) {
     // convert hex to binary
     auto src_hex = sl::io::array_source(image_hex.data(), image_hex.length());
@@ -200,6 +208,10 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
     if ("PNG" == format) {
         // explicit check is required because haru may crash on invalid PNG input
         check_png_valid(src);
+    } else { // "JPEG"
+        // explicit check is required because haru moves doc into invalid state on,
+        // invalid JPEG input
+        check_jpeg_valid(src);
     }
     // note: currently there is no image reuse - it is loaded every time
     auto buf_ptr = const_cast<const unsigned char*>(reinterpret_cast<unsigned char*>(sink_bin.data()));

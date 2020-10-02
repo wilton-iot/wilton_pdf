@@ -20,6 +20,7 @@ project ( wilton_pdf CXX )
 # dependencies
 if ( STATICLIB_TOOLCHAIN MATCHES "(android|windows|macosx)_.+" )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
+    staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libjpeg-turbo )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
 elseif ( WILTON_BUILD_FLAVOUR MATCHES "(wheezy|stretch|el7)" )
     # libhpdf-dev here doesn't support unicode
@@ -35,6 +36,7 @@ set ( ${PROJECT_NAME}_DEPS
         staticlib_json
         staticlib_tinydir
         libpng
+        libjpeg
         hpdf )
 staticlib_pkg_check_modules ( ${PROJECT_NAME}_DEPS_PC REQUIRED ${PROJECT_NAME}_DEPS )
 
