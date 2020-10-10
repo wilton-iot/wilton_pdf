@@ -39,8 +39,9 @@
 #include "wilton/support/unique_handle_registry.hpp"
 #include "wilton/support/registrar.hpp"
 
-#include "jpeg_checker.hpp"
 #include "png_checker.hpp"
+// must go after png.h because of <setjmp> include order
+#include "jpeg_checker.hpp"
 
 namespace wilton {
 namespace pdf {
@@ -96,7 +97,7 @@ HPDF_Image load_image_from_hex(HPDF_Doc doc, const std::string& image_hex, const
         auto src = sl::io::make_hex_source(src_hex);
         sl::io::copy_all(src, sink_bin);
     }
-    auto span = sl::io::span(sink_bin.data(), sink_bin.size());
+    auto span = sl::io::make_span(sink_bin.data(), sink_bin.size());
     return load_image_from_bytes(doc, span, format);
 }
 
@@ -105,7 +106,7 @@ HPDF_Image load_image_from_file(HPDF_Doc doc, const std::string& image_path, con
     auto src = sl::tinydir::file_source(image_path);
     auto sink = sl::io::make_array_sink();
     sl::io::copy_all(src, sink);
-    auto span = sl::io::span(sink.data(), sink.size());
+    auto span = sl::io::make_span(sink.data(), sink.size());
     return load_image_from_bytes(doc, span, format);
 }
 
