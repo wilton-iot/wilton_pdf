@@ -74,7 +74,7 @@ if ( STATICLIB_TOOLCHAIN MATCHES "android_.+" )
 elseif ( STATICLIB_TOOLCHAIN MATCHES "windows_.+" )
     target_link_libraries ( ${PROJECT_NAME} PRIVATE wtsapi32 )
     set_property ( TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS "/manifest:no" )
-    target_compile_options ( ${PROJECT_NAME} PRIVATE /wd4351 /wd4611 )
+    target_compile_options ( ${PROJECT_NAME} PRIVATE /wd4324 /wd4351 /wd4611 )
 endif ( )
 
 # mac dep paths
