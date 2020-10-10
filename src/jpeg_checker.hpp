@@ -67,8 +67,7 @@ void check_jpeg_valid(sl::io::span<char> span) {
     auto deferred = sl::support::defer([&cinfo]() STATICLIB_NOEXCEPT {
         jpeg_destroy_decompress(std::addressof(cinfo));
     });
-    auto udata = const_cast<const unsigned char*>(reinterpret_cast<unsigned char*>(span.data()));
-    jpeg_mem_src(std::addressof(cinfo), udata, span.size());
+    jpeg_mem_src(std::addressof(cinfo), reinterpret_cast<unsigned char*>(span.data()), span.size());
     if (0 == setjmp(emgr.jmpbuf)) {
         // jpeg error will be longjumping through this scope
         // auto vars with destructors are UB here
