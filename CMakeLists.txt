@@ -22,7 +22,7 @@ if ( STATICLIB_TOOLCHAIN MATCHES "(android|windows|macosx)_.+" )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libpng )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_libjpeg-turbo )
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
-elseif ( WILTON_BUILD_FLAVOUR MATCHES "(wheezy|stretch|el7)" )
+elseif ( WILTON_BUILD_FLAVOUR MATCHES "(wheezy|el7)" )
     # libhpdf-dev here doesn't support unicode
     staticlib_add_subdirectory ( ${STATICLIB_DEPS}/external_hpdf )
 endif ( )
